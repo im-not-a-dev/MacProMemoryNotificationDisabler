@@ -26,6 +26,7 @@
 
 // Pathes to binaries.
 static const char *binPathSystemInformation = "/Applications/Utilities/System Information.app/Contents/MacOS/System Information";
+static const char *binPathSystemInformationCatalina = "/System/Applications/Utilities/System Information.app/Contents/MacOS/System Information";
 static const char *binPathSPMemoryReporter = "/System/Library/SystemProfiler/SPMemoryReporter.spreporter/Contents/MacOS/SPMemoryReporter";
 
 static const uint32_t SectionActive = 1;
@@ -38,20 +39,6 @@ static UserPatcher::BinaryModPatch patchAir {
     findAir,
     replaceAir,
     strlen(reinterpret_cast<const char *>(findAir)),
-    0,
-    1,
-    UserPatcher::FileSegment::SegmentTextCstring,
-    SectionActive
-};
-
-// MacBookPro10 name patches.
-static const uint8_t findPro10[] = "MacBookPro10";
-static const uint8_t replacePro10[] = "MacBookXro10";
-static UserPatcher::BinaryModPatch patchPro10 {
-    CPU_TYPE_X86_64,
-    findPro10,
-    replacePro10,
-    strlen(reinterpret_cast<const char *>(findPro10)),
     0,
     1,
     UserPatcher::FileSegment::SegmentTextCstring,
@@ -89,7 +76,15 @@ static UserPatcher::BinaryModPatch patchBytesSPMemoryReporter {
     SectionActive
 };
 
-// BinaryModInfo array containing all patches required.
+// BinaryModInfo array containing all patches required. Paths changed in 10.15.
+static UserPatcher::BinaryModInfo binaryPatchesCatalina[] {
+    { binPathSystemInformationCatalina, &patchBytesSystemInformation, 1},
+    { binPathSPMemoryReporter, &patchBytesSPMemoryReporter, 1},
+    { binPathSystemInformationCatalina, &patchAir, 1 },
+    { binPathSPMemoryReporter, &patchAir, 1 }
+};
+
+// BinaryModInfo array containing all patches required for 10.14 and below.
 static UserPatcher::BinaryModInfo binaryPatches[] {
     { binPathSystemInformation, &patchBytesSystemInformation, 1},
     { binPathSPMemoryReporter, &patchBytesSPMemoryReporter, 1},
@@ -102,6 +97,9 @@ static UserPatcher::BinaryModInfo binaryPatches[] {
 static UserPatcher::BinaryModInfo binaryPatchesML[] {
     { binPathSystemInformation, &patchAir, 1 },
 };
+
+// System Information process info.
+static UserPatcher::ProcInfo procInfoCatalina = { binPathSystemInformationCatalina, static_cast<uint32_t>(strlen(binPathSystemInformationCatalina)), 1 };
 
 // System Information process info.
 static UserPatcher::ProcInfo procInfo = { binPathSystemInformation, static_cast<uint32_t>(strlen(binPathSystemInformation)), 1 };
@@ -138,6 +136,12 @@ static void buildPatch(KernelPatcher &patcher, const char *path, uint8_t *findBu
     Buffer::deleter(buffer);
 }
 
+static void buildPatchesCatalina(void *user, KernelPatcher &patcher) {
+    // Build patches for binaries.
+    buildPatch(patcher, binPathSystemInformationCatalina, findBytesSystemInformation);
+    buildPatch(patcher, binPathSPMemoryReporter, findBytesSPMemoryReporter);
+}
+
 static void buildPatches(void *user, KernelPatcher &patcher) {
     // Build patches for binaries.
     buildPatch(patcher, binPathSystemInformation, findBytesSystemInformation);
@@ -148,12 +152,18 @@ static void buildPatches(void *user, KernelPatcher &patcher) {
 static void spmemfxStart() {
     DBGLOG("SystemProfilerMemoryFixup", "start");
     
-    // Are we on 10.9 or above?
-    if (getKernelVersion() >= KernelVersion::Mavericks) {
+    // Are we on 10.15 or above?
+    if (getKernelVersion() >= KernelVersion::Catalina) {
+        // Load callback so we can determine patterns to search for.
+        lilu.onPatcherLoad(buildPatchesCatalina);
+        
+        // Load patches into Lilu for 10.15+.
+        lilu.onProcLoadForce(&procInfoCatalina, 1, nullptr, nullptr, binaryPatchesCatalina, arrsize(binaryPatchesCatalina));
+    } else if (getKernelVersion() >= KernelVersion::Mavericks) {
         // Load callback so we can determine patterns to search for.
         lilu.onPatcherLoad(buildPatches);
         
-        // Load patches into Lilu.
+        // Load patches into Lilu for 10.9 to 10.14.
         lilu.onProcLoadForce(&procInfo, 1, nullptr, nullptr, binaryPatches, arrsize(binaryPatches));
     } else if (getKernelVersion() == KernelVersion::MountainLion) {
         // 10.8 requires only a single patch.
@@ -184,7 +194,7 @@ PluginConfiguration ADDPR(config) {
     bootargBeta,
     arrsize(bootargBeta),
     KernelVersion::MountainLion,
-    KernelVersion::Mojave,
+    KernelVersion::Catalina,
     []() {
         spmemfxStart();
     }
