@@ -110,8 +110,12 @@ static void buildPatch(KernelPatcher &patcher, const char *path, uint8_t *findBu
     // Get contents of binary.
     size_t outSize;
     uint8_t *buffer = FileIO::readFileToBuffer(path, outSize);
-    if (buffer == NULL)
-        panic("SystemProfilerMemoryFixup: Failed to read binary: %s\n", path);
+    if (buffer == NULL) {
+        DBGLOG("SystemProfilerMemoryFixup", "Failed to read binary: %s\n", path);
+        procInfo.section = procInfo.SectionDisabled;
+        procInfoCatalina.section = procInfoCatalina.SectionDisabled;
+        return;
+    }
     
     // Find where ASI_IsPlatformFeatureEnabled is called.
     off_t index = 0;
