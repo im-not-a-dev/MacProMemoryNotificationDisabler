@@ -36,6 +36,7 @@ static const uint8_t findAir[] = "MacBookAir";
 static const uint8_t replaceAir[] = "MacBookXir";
 static UserPatcher::BinaryModPatch patchAir {
     CPU_TYPE_X86_64,
+    0,
     findAir,
     replaceAir,
     strlen(reinterpret_cast<const char *>(findAir)),
@@ -54,6 +55,7 @@ static const uint8_t replaceBytes[patchBytesCount] = { 0xB8, 0x00, 0x00, 0x00, 0
 static uint8_t findBytesSystemInformation[patchBytesCount] = { };
 static UserPatcher::BinaryModPatch patchBytesSystemInformation {
     CPU_TYPE_X86_64,
+    0,
     findBytesSystemInformation,
     replaceBytes,
     patchBytesCount,
@@ -67,6 +69,7 @@ static UserPatcher::BinaryModPatch patchBytesSystemInformation {
 static uint8_t findBytesSPMemoryReporter[patchBytesCount] = { };
 static UserPatcher::BinaryModPatch patchBytesSPMemoryReporter {
     CPU_TYPE_X86_64,
+    0,
     findBytesSPMemoryReporter,
     replaceBytes,
     patchBytesCount,
