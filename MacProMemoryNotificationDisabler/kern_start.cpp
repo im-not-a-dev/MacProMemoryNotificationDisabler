@@ -25,8 +25,9 @@
 #include <Headers/kern_api.hpp>
 #include <Headers/kern_file.hpp>
 
-// Path to binary.
+// Paths to binaries.
 static const char *binPathMemorySlotNotification = "/System/Library/CoreServices/MemorySlotNotification";
+static const char *binPathSystemInformationCatalina = "/System/Applications/Utilities/System Information.app/Contents/MacOS/System Information";
 
 static const uint32_t SectionActive = 1;
 
@@ -54,6 +55,9 @@ static UserPatcher::BinaryModInfo binaryPatchesCatalina[] {
     { binPathMemorySlotNotification, &patchBytesMemorySlotNotification, 1},
 };
 
+// System Information process info.
+static UserPatcher::ProcInfo procInfoCatalina = { binPathSystemInformationCatalina, static_cast<uint32_t>(strlen(binPathSystemInformationCatalina)), 1 };
+
 static void buildPatch(KernelPatcher &patcher, const char *path, uint8_t *findBuffer) {
     DBGLOG("MacProMemoryNotificationDisabler", "buildPatches() start");
     
@@ -62,7 +66,6 @@ static void buildPatch(KernelPatcher &patcher, const char *path, uint8_t *findBu
     uint8_t *buffer = FileIO::readFileToBuffer(path, outSize);
     if (buffer == NULL) {
         DBGLOG("MacProMemoryNotificationDisabler", "Failed to read binary: %s\n", path);
-        procInfo.section = procInfo.SectionDisabled;
         procInfoCatalina.section = procInfoCatalina.SectionDisabled;
         return;
     }
@@ -131,6 +134,7 @@ PluginConfiguration ADDPR(config) {
     arrsize(bootargDebug),
     bootargBeta,
     arrsize(bootargBeta),
+    KernelVersion::Catalina,
     KernelVersion::Catalina,
     []() {
         mpmndStart();
