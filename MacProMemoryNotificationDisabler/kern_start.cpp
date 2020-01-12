@@ -31,6 +31,21 @@ static const char *binPathSystemInformationCatalina = "/System/Applications/Util
 
 static const uint32_t SectionActive = 1;
 
+static const size_t patchBytesCountTooMuchSI = 5;
+static uint8_t findBytesTooMuchSI[patchBytesCountTooMuchSI] = { 0x84, 0xC0, 0x74, 0x64, 0x48 };
+static const uint8_t replaceBytesTooMuchSI[patchBytesCountTooMuchSI] = { 0x84, 0xC0, 0x75, 0x64, 0x48 };
+static UserPatcher::BinaryModPatch patchTooMuchSI {
+    CPU_TYPE_X86_64,
+    0,
+    findBytesTooMuchSI,
+    replaceBytesTooMuchSI,
+    patchBytesCountTooMuchSI,
+    0,
+    1,
+    UserPatcher::FileSegment::SegmentTextText,
+    SectionActive
+};
+
 // Find:    74 xx 4C 89 F7 E8 xx xx xx xx
 // Replace: 90 90 4C 89 F7 90 90 90 90 90
 static const size_t patchBytesCount = 10;
@@ -53,6 +68,7 @@ static UserPatcher::BinaryModPatch patchBytesMemorySlotNotification {
 // BinaryModInfo array containing all patches required. 
 static UserPatcher::BinaryModInfo binaryPatchesCatalina[] {
     { binPathMemorySlotNotification, &patchBytesMemorySlotNotification, 1},
+    { binPathSystemInformationCatalina, &patchTooMuchSI, 1 },
 };
 
 // System Information process info.
