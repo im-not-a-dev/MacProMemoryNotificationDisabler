@@ -46,9 +46,9 @@ static UserPatcher::BinaryModPatch patchTooMuchSI {
     SectionActive
 };
 
-// Find:    74 xx 4C 89 F7 E8 xx xx xx xx
-// Replace: 90 90 4C 89 F7 90 90 90 90 90
-static const size_t patchBytesCount = 10;
+// Find:    55 48 89 E5 E8 xx xx xx xx
+// Replace: 90 90 90 90 90 90 90 90 90
+static const size_t patchBytesCount = 9;
 static const uint8_t replaceBytes[patchBytesCount] = { 0x90, 0x90, 0x4C, 0x89, 0xF7, 0x90, 0x90, 0x90, 0x90, 0x90 };
 
 // Patching info for MemorySlotNotification binary.
@@ -89,8 +89,8 @@ static void buildPatch(KernelPatcher &patcher, const char *path, uint8_t *findBu
     // Find where the notification is called.
     off_t index = 0;
     for (off_t i = 0; i < outSize; i++) {
-        if (buffer[i] == 0x74 && buffer[i+2] == 0x4C && buffer[i+3] == 0x89 
-            && buffer[i+4] == 0xF7 && buffer[i+5] == 0xE8) {
+        if (buffer[i] == 0x55 && buffer[i+1] == 0x48 && buffer[i+2] == 0x89 
+            && buffer[i+3] == 0xE5 && buffer[i+4] == 0xE8) {
             index = i;
             break;
         }
