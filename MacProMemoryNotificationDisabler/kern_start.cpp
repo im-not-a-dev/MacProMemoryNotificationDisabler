@@ -46,10 +46,35 @@ static UserPatcher::BinaryModPatch patchTooMuchSI {
     SectionActive
 };
 
-// Find:    55 48 89 E5 E8 xx xx xx xx
-// Replace: 90 90 90 90 90 90 90 90 90
+/*
+ Find:    55 48 89 E5 E8 xx xx xx xx
+ Replace: 90 90 90 90 90 90 90 90 90
+ 
+ Find:
+ push       rbp
+ mov        rbp, rsp
+ call       sub_100002460
+ xor        eax, eax
+ pop        rbp
+ ret
+ 
+ Replace:
+ nop
+ nop
+ nop
+ nop
+ nop
+ nop
+ nop
+ nop
+ nop
+ xor        eax, eax
+ pop        rbp
+ ret
+ 
+ */
 static const size_t patchBytesCount = 9;
-static const uint8_t replaceBytes[patchBytesCount] = { 0x90, 0x90, 0x4C, 0x89, 0xF7, 0x90, 0x90, 0x90, 0x90, 0x90 };
+static const uint8_t replaceBytes[patchBytesCount] = { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
 
 // Patching info for MemorySlotNotification binary.
 static uint8_t findBytesMemorySlotNotification[patchBytesCount] = { };
@@ -72,7 +97,7 @@ static UserPatcher::BinaryModInfo binaryPatchesCatalina[] {
 };
 
 // System Information process info.
-static UserPatcher::ProcInfo procInfoCatalina = { binPathSystemInformationCatalina, static_cast<uint32_t>(strlen(binPathSystemInformationCatalina)), 1 };
+static UserPatcher::ProcInfo procInfoCatalina = { binPathMemorySlotNotification, static_cast<uint32_t>(strlen(binPathMemorySlotNotification)), 1 };
 
 static void buildPatch(KernelPatcher &patcher, const char *path, uint8_t *findBuffer) {
     DBGLOG("MacProMemoryNotificationDisabler", "buildPatches() start");
@@ -97,9 +122,13 @@ static void buildPatch(KernelPatcher &patcher, const char *path, uint8_t *findBu
     }
     
     // If we found no match, we can't go on.
-    if (index == 0)
-        panic("MacProMemoryNotificationDisabler: Failed to get index into binary: %s\n", path);
-    
+    if (index == 0) {
+        DBGLOG("MacProMemoryNotificationDisabler", "Failed to get index into binary: %s\n", path);
+        Buffer::deleter(buffer);
+        procInfoCatalina.section = procInfoCatalina.SectionDisabled;
+        return;
+    }
+        
     // Build find pattern.
     uint8_t *bufferOffset = buffer + index;
     for (uint32_t i = 0; i < patchBytesCount; i++)
