@@ -47,34 +47,11 @@ static UserPatcher::BinaryModPatch patchTooMuchSI {
 };
 
 /*
- Find:    55 48 89 E5 E8 xx xx xx xx
- Replace: 90 90 90 90 90 90 90 90 90
- 
- Find:
- push       rbp
- mov        rbp, rsp
- call       sub_100002460
- xor        eax, eax
- pop        rbp
- ret
- 
- Replace:
- nop
- nop
- nop
- nop
- nop
- nop
- nop
- nop
- nop
- xor        eax, eax
- pop        rbp
- ret
- 
+ Find:    74 xx 4C 89 F7 E8 xx xx xx xx
+ Replace: 90 90 4C 89 F7 90 90 90 90 90
  */
-static const size_t patchBytesCount = 9;
-static const uint8_t replaceBytes[patchBytesCount] = { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
+static const size_t patchBytesCount = 10;
+static const uint8_t replaceBytes[patchBytesCount] = { 0x90, 0x90, 0x4C, 0x89, 0xF7, 0x90, 0x90, 0x90, 0x90, 0x90 };
 
 // Patching info for MemorySlotNotification binary.
 static uint8_t findBytesMemorySlotNotification[patchBytesCount] = { };
