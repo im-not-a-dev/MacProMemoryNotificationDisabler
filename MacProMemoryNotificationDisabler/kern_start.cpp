@@ -156,7 +156,7 @@ PluginConfiguration ADDPR(config) {
     arrsize(bootargDebug),
     bootargBeta,
     arrsize(bootargBeta),
-    KernelVersion::BigSur,
+    KernelVersion::Catalina,
     KernelVersion::BigSur,
     []() {
         mpmndStart();
